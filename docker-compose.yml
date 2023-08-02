@@ -1,0 +1,26 @@
+version: "3"
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    restart: always
+    ports:
+      - "80:80"
+    command: "/bin/sh -c 'while :; do sleep 20d & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/logs:/var/log/nginx
+      - ./dist:/dist:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+  certbot:
+    build:
+      context: .
+      dockerfile: ./certbot/Dockerfile
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 10d & wait $${!}; done;'"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - ./certbot/logs:/var/log/letsencrypt
+      - ./dist:/dist
+    command: ["--version"]
+
